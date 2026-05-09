@@ -151,7 +151,6 @@ class _SankeyShowcaseState extends State<SankeyShowcase> {
         child: Center(
           child: SankeyDiagram(
             minNodeHeight: 14,
-            unselectedColor: Colors.grey.withValues(alpha: 0.05),
             labelBuilder: (context, node, isActive, isLeft, value) {
               final formattedValue = value
                   .toStringAsFixed(0)

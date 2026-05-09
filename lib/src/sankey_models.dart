@@ -2,9 +2,35 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 @immutable
+abstract class SankeyNodeBase {
+  final String label;
+  final Color color;
+  final double value;
+
+  const SankeyNodeBase({
+    required this.label,
+    required this.color,
+    required this.value,
+  });
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is SankeyNodeBase &&
+          runtimeType == other.runtimeType &&
+          label == other.label &&
+          color == other.color &&
+          value == other.value;
+
+  @override
+  int get hashCode => Object.hash(label, color, value);
+}
+
+@immutable
 class SankeyTarget {
   final String label;
   final double value;
+
   const SankeyTarget(this.label, this.value);
 
   @override
@@ -20,18 +46,29 @@ class SankeyTarget {
 }
 
 @immutable
-class SankeySourceNode {
-  final String label;
-  final Color color;
-  final double value;
+class SankeySourceNode extends SankeyNodeBase {
   final List<SankeyTarget> targets;
 
   const SankeySourceNode(
-    this.label,
-    this.color,
-    this.value, {
-    required this.targets,
-  });
+    String label,
+    Color color,
+    double value, {
+    this.targets = const [],
+  }) : super(label: label, color: color, value: value);
+
+  SankeySourceNode copyWith({
+    String? label,
+    Color? color,
+    double? value,
+    List<SankeyTarget>? targets,
+  }) {
+    return SankeySourceNode(
+      label ?? this.label,
+      color ?? this.color,
+      value ?? this.value,
+      targets: targets ?? this.targets,
+    );
+  }
 
   @override
   bool operator ==(Object other) =>
@@ -48,15 +85,16 @@ class SankeySourceNode {
 }
 
 @immutable
-class SankeyDestinationNode {
-  final String label;
-  final Color color;
-  final double value;
+class SankeyDestinationNode extends SankeyNodeBase {
+  const SankeyDestinationNode(String label, Color color, {required super.value})
+    : super(label: label, color: color);
 
-  const SankeyDestinationNode(this.label, this.color, {this.value = 0});
-
-  SankeyDestinationNode copyWith({double? value}) {
-    return SankeyDestinationNode(label, color, value: value ?? this.value);
+  SankeyDestinationNode copyWith({String? label, Color? color, double? value}) {
+    return SankeyDestinationNode(
+      label ?? this.label,
+      color ?? this.color,
+      value: value ?? this.value,
+    );
   }
 
   @override
@@ -72,20 +110,51 @@ class SankeyDestinationNode {
   int get hashCode => Object.hash(label, color, value);
 }
 
+enum SankeyNodeSide { left, right }
+
 @immutable
 class SankeyLink {
-  final int sourceIndex, targetIndex;
+  final int sourceIndex;
+  final int targetIndex;
   final double value;
   final Color color;
+
   const SankeyLink({
     required this.sourceIndex,
     required this.targetIndex,
     required this.value,
     required this.color,
   });
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is SankeyLink &&
+          runtimeType == other.runtimeType &&
+          sourceIndex == other.sourceIndex &&
+          targetIndex == other.targetIndex &&
+          value == other.value &&
+          color == other.color;
+
+  @override
+  int get hashCode => Object.hash(sourceIndex, targetIndex, value, color);
 }
 
+@immutable
 class NodeLayout {
-  final double top, height;
+  final double top;
+  final double height;
+
   const NodeLayout({required this.top, required this.height});
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is NodeLayout &&
+          runtimeType == other.runtimeType &&
+          top == other.top &&
+          height == other.height;
+
+  @override
+  int get hashCode => Object.hash(top, height);
 }

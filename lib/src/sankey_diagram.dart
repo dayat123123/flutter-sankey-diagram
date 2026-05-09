@@ -8,8 +8,13 @@ class SankeyDiagram extends StatefulWidget {
   final List<SankeyDestinationNode> rightNodes;
   final Color? unselectedColor;
   final double minNodeHeight;
-  final Widget Function(BuildContext, dynamic, bool, bool, double)?
+  final Widget Function(BuildContext, SankeyNodeBase, bool, bool, double)?
   labelBuilder;
+
+  final bool showHeader;
+  final Widget? leftHeader;
+  final Widget? rightHeader;
+  final Widget? footer;
 
   const SankeyDiagram({
     super.key,
@@ -17,7 +22,11 @@ class SankeyDiagram extends StatefulWidget {
     required this.rightNodes,
     this.labelBuilder,
     this.unselectedColor,
-    this.minNodeHeight = 20.0,
+    this.minNodeHeight = 16.0,
+    this.showHeader = false,
+    this.leftHeader,
+    this.rightHeader,
+    this.footer,
   });
 
   @override
@@ -63,11 +72,7 @@ class _SankeyDiagramState extends State<SankeyDiagram>
     _sLeft = List<SankeySourceNode>.from(widget.leftNodes)
       ..sort((a, b) => b.value.compareTo(a.value));
 
-    final processedRight = widget.rightNodes
-        .map((node) => node.copyWith(value: totals[node.label] ?? 0))
-        .toList();
-
-    _sRight = List<SankeyDestinationNode>.from(processedRight)
+    _sRight = List<SankeyDestinationNode>.from(widget.rightNodes)
       ..sort((a, b) => b.value.compareTo(a.value));
 
     _links = [];
@@ -160,7 +165,41 @@ class _SankeyDiagramState extends State<SankeyDiagram>
               _onTapDown(details, constraints, lLayouts, rLayouts),
           child: Stack(
             children: [
+              if (widget.showHeader)
+                Positioned(
+                  top: 0,
+                  left: 12,
+                  child: IgnorePointer(
+                    child:
+                        widget.leftHeader ??
+                        Text(
+                          "Buyer",
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                  ),
+                ),
+
+              if (widget.showHeader)
+                Positioned(
+                  top: 0,
+                  right: 12,
+                  child: IgnorePointer(
+                    child:
+                        widget.rightHeader ??
+                        const Text(
+                          "Seller",
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                  ),
+                ),
               Positioned.fill(
+                top: widget.showHeader ? 8 : 0,
                 child: AnimatedBuilder(
                   animation: _controller,
                   builder: (context, _) => CustomPaint(
@@ -181,6 +220,13 @@ class _SankeyDiagramState extends State<SankeyDiagram>
                 ),
               ),
               ..._buildLabels(lLayouts, rLayouts, _links, _sLeft, _sRight),
+              if (widget.footer != null)
+                Positioned(
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  child: IgnorePointer(child: widget.footer!),
+                ),
             ],
           ),
         );
@@ -192,8 +238,9 @@ class _SankeyDiagramState extends State<SankeyDiagram>
     List<dynamic> nodes,
     double totalAvailableHeight,
   ) {
+    final footerSpacing = widget.footer != null ? 30.0 : 0.0;
     Map<int, NodeLayout> layouts = {};
-    double usableHeight = totalAvailableHeight - 40;
+    double usableHeight = totalAvailableHeight - 30 - footerSpacing;
     double gap = 14.0;
 
     if ((nodes.length * widget.minNodeHeight) + (nodes.length * gap) >
