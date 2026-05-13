@@ -12,8 +12,8 @@ class SankeyDiagram extends StatefulWidget {
   labelBuilder;
 
   final bool showHeader;
-  final Widget? leftHeader;
-  final Widget? rightHeader;
+  final Widget Function(BuildContext context, bool isActive, bool isLeft)?
+  headerBuilder;
   final Widget? footer;
 
   const SankeyDiagram({
@@ -24,8 +24,7 @@ class SankeyDiagram extends StatefulWidget {
     this.unselectedColor,
     this.minNodeHeight = 16.0,
     this.showHeader = false,
-    this.leftHeader,
-    this.rightHeader,
+    this.headerBuilder,
     this.footer,
   });
 
@@ -101,28 +100,53 @@ class _SankeyDiagramState extends State<SankeyDiagram>
   ) {
     final x = details.localPosition.dx;
     final y = details.localPosition.dy;
-    int? nL, nR;
+
+    int? nL;
+    int? nR;
 
     if (x < 80) {
-      lLayouts.forEach((i, rect) {
-        if (y >= rect.top && y <= rect.top + rect.height) nL = i;
-      });
+      for (final entry in lLayouts.entries) {
+        final rect = entry.value;
+
+        if (y >= rect.top && y <= rect.top + rect.height) {
+          nL = entry.key;
+          break;
+        }
+      }
     } else if (x > constraints.maxWidth - 80) {
-      rLayouts.forEach((i, rect) {
-        if (y >= rect.top && y <= rect.top + rect.height) nR = i;
-      });
+      for (final entry in rLayouts.entries) {
+        final rect = entry.value;
+
+        if (y >= rect.top && y <= rect.top + rect.height) {
+          nR = entry.key;
+          break;
+        }
+      }
     }
 
-    if (nL != null || nR != null) {
-      _controller.reset();
-      setState(() {
-        hasInteracted = true;
-        selectedLeft = nL;
-        selectedRight = nR;
-        flowForward = nL != null;
-      });
-      _controller.forward();
+    if (nL == null && nR == null) return;
+
+    final bool nextFlowForward = nL != null;
+
+    final bool isSameSelection =
+        selectedLeft == nL &&
+        selectedRight == nR &&
+        flowForward == nextFlowForward;
+
+    if (isSameSelection) {
+      return;
     }
+
+    _controller
+      ..reset()
+      ..forward();
+
+    setState(() {
+      hasInteracted = true;
+      selectedLeft = nL;
+      selectedRight = nR;
+      flowForward = nextFlowForward;
+    });
   }
 
   @override
@@ -165,41 +189,32 @@ class _SankeyDiagramState extends State<SankeyDiagram>
               _onTapDown(details, constraints, lLayouts, rLayouts),
           child: Stack(
             children: [
-              if (widget.showHeader)
+              if (widget.showHeader && widget.headerBuilder != null)
                 Positioned(
                   top: 0,
                   left: 12,
                   child: IgnorePointer(
-                    child:
-                        widget.leftHeader ??
-                        Text(
-                          "Buyer",
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
+                    child: widget.headerBuilder?.call(
+                      context,
+                      selectedLeft != null,
+                      true,
+                    ),
                   ),
                 ),
-
-              if (widget.showHeader)
+              if (widget.showHeader && widget.headerBuilder != null)
                 Positioned(
                   top: 0,
                   right: 12,
                   child: IgnorePointer(
-                    child:
-                        widget.rightHeader ??
-                        const Text(
-                          "Seller",
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
+                    child: widget.headerBuilder?.call(
+                      context,
+                      selectedRight != null,
+                      false,
+                    ),
                   ),
                 ),
               Positioned.fill(
-                top: widget.showHeader ? 8 : 0,
+                top: widget.showHeader ? 12 : 0,
                 child: AnimatedBuilder(
                   animation: _controller,
                   builder: (context, _) => CustomPaint(
