@@ -339,7 +339,7 @@ class _SankeyDiagramState extends State<SankeyDiagram>
           : (leftContribution[i] ?? sL[i].value);
       widgets.add(
         Positioned(
-          top: layout.top + (layout.height / 2) - 10,
+          top: layout.top + (layout.height / 2),
           left: 32,
           child: IgnorePointer(
             child: widget.labelBuilder?.call(
@@ -361,7 +361,7 @@ class _SankeyDiagramState extends State<SankeyDiagram>
           : (rightContribution[i] ?? sR[i].value);
       widgets.add(
         Positioned(
-          top: layout.top + (layout.height / 2) - 10,
+          top: layout.top + (layout.height / 2),
           right: 32,
           child: IgnorePointer(
             child: widget.labelBuilder?.call(
